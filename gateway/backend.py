@@ -36,7 +36,19 @@ chatgpt_paths = ["c/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-
 
 def get_request_token(request: Request):
     token = request.headers.get("Authorization", "").replace("Bearer ", "")
-    return token if token else get_default_authorization()
+    if token:
+        return token
+    fallback = get_default_authorization()
+    if fallback:
+        return fallback
+    raise HTTPException(status_code=401, detail="Authorization header is missing and AUTHORIZATION is not set")
+
+
+def require_seed(token: str):
+    seed = globals.seed_map.get(token)
+    if seed is None:
+        raise HTTPException(status_code=401, detail="Invalid Seed")
+    return seed
 
 
 @app.get("/backend-api/accounts/check/v4-2023-04-27")
@@ -48,10 +60,10 @@ async def check_account(request: Request):
     else:
         check_account_str = check_account_response.body.decode('utf-8')
         check_account_info = json.loads(check_account_str)
+        seed = require_seed(token)
         for key in check_account_info.get("accounts", {}).keys():
             account_id = check_account_info["accounts"][key]["account"]["account_id"]
-            globals.seed_map[token]["user_id"] = \
-            check_account_info["accounts"][key]["account"]["account_user_id"].split("__")[0]
+            seed["user_id"] = check_account_info["accounts"][key]["account"]["account_user_id"].split("__")[0]
             check_account_info["accounts"][key]["account"]["account_user_id"] = f"user-chatgpt__{account_id}"
         with open(globals.SEED_MAP_FILE, "w", encoding="utf-8") as f:
             json.dump(globals.seed_map, f, indent=4)
@@ -104,7 +116,8 @@ async def get_conversations(request: Request):
         offset = int(request.query_params.get("offset", 0))
         is_archived = request.query_params.get("is_archived", None)
         items = []
-        for conversation_id in globals.seed_map.get(token, {}).get("conversations", []):
+        seed = require_seed(token)
+        for conversation_id in seed.get("conversations", []):
             conversation = globals.conversation_map.get(conversation_id, None)
             if conversation:
                 if is_archived == "true":
@@ -136,8 +149,8 @@ async def update_conversation(request: Request, conversation_id: str):
     else:
         conversation_details_str = conversation_details_response.body.decode('utf-8')
         conversation_details = json.loads(conversation_details_str)
-        if conversation_id in globals.seed_map[token][
-            "conversations"] and conversation_id in globals.conversation_map:
+        seed = require_seed(token)
+        if conversation_id in seed.get("conversations", []) and conversation_id in globals.conversation_map:
             globals.conversation_map[conversation_id]["title"] = conversation_details.get("title", None)
             globals.conversation_map[conversation_id]["is_archived"] = conversation_details.get("is_archived",
                                                                                                 False)
@@ -159,11 +172,11 @@ async def patch_conversation(request: Request, conversation_id: str):
         return patch_response
     else:
         data = await request.json()
-        if conversation_id in globals.seed_map[token][
-            "conversations"] and conversation_id in globals.conversation_map:
+        seed = require_seed(token)
+        if conversation_id in seed.get("conversations", []) and conversation_id in globals.conversation_map:
             if not data.get("is_visible", True):
                 globals.conversation_map.pop(conversation_id)
-                globals.seed_map[token]["conversations"].remove(conversation_id)
+                seed["conversations"].remove(conversation_id)
                 with open(globals.SEED_MAP_FILE, "w", encoding="utf-8") as f:
                     json.dump(globals.seed_map, f, indent=4)
             else:
