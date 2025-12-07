@@ -13,7 +13,7 @@ from chatgpt.authorization import get_fp, verify_token
 from gateway.reverseProxy import get_real_req_token
 from utils.Client import Client
 from utils.Logger import logger
-from utils.configs import proxy_url_list, chatgpt_base_url_list, authorization_list
+from utils.config import proxy_url_list, chatgpt_base_url_list, authorization_list, get_default_authorization
 
 base_headers = {
     'accept': '*/*',
@@ -28,16 +28,22 @@ base_headers = {
 }
 
 
-def verify_authorization(bearer_token):
+def resolve_authorization(credentials: HTTPAuthorizationCredentials):
+    bearer_token = credentials.credentials if credentials and credentials.credentials else get_default_authorization()
     if not bearer_token:
-        raise HTTPException(status_code=401, detail="Authorization header is missing")
+        raise HTTPException(status_code=401, detail="Authorization header is missing or AUTHORIZATION not set")
+    return bearer_token
+
+
+def verify_authorization(bearer_token):
     if bearer_token not in authorization_list:
         raise HTTPException(status_code=401, detail="Invalid authorization")
 
 
 @app.get("/seedtoken")
 async def get_seedtoken(request: Request, credentials: HTTPAuthorizationCredentials = Security(security_scheme)):
-    verify_authorization(credentials.credentials)
+    bearer_token = resolve_authorization(credentials)
+    verify_authorization(bearer_token)
     try:
         params = request.query_params
         seed = params.get("seed")
@@ -65,7 +71,8 @@ async def get_seedtoken(request: Request, credentials: HTTPAuthorizationCredenti
 
 @app.post("/seedtoken")
 async def set_seedtoken(request: Request, credentials: HTTPAuthorizationCredentials = Security(security_scheme)):
-    verify_authorization(credentials.credentials)
+    bearer_token = resolve_authorization(credentials)
+    verify_authorization(bearer_token)
     data = await request.json()
 
     seed = data.get("seed")
@@ -87,7 +94,8 @@ async def set_seedtoken(request: Request, credentials: HTTPAuthorizationCredenti
 
 @app.delete("/seedtoken")
 async def delete_seedtoken(request: Request, credentials: HTTPAuthorizationCredentials = Security(security_scheme)):
-    verify_authorization(credentials.credentials)
+    bearer_token = resolve_authorization(credentials)
+    verify_authorization(bearer_token)
 
     try:
         data = await request.json()

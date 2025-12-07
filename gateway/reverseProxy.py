@@ -12,7 +12,7 @@ import utils.globals as globals
 from chatgpt.authorization import verify_token, get_req_token, get_fp
 from utils.Client import Client
 from utils.Logger import logger
-from utils.configs import chatgpt_base_url_list
+from utils.config import chatgpt_base_url_list
 
 
 def generate_current_time():

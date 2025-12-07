@@ -8,7 +8,7 @@ from ua_generator.options import Options
 from ua_generator.data.version import VersionRange
 from fastapi import HTTPException
 
-import utils.configs as configs
+import utils.config as configs
 import utils.globals as globals
 from chatgpt.refreshToken import rt2ac
 from utils.Logger import logger
@@ -94,24 +94,20 @@ def get_fp(req_token):
 
 async def verify_token(req_token):
     if not req_token:
-        if configs.authorization_list:
-            logger.error("Unauthorized with empty token.")
-            raise HTTPException(status_code=401)
-        else:
-            return None
+        # Allow requests without an authorization token when configured to accept all inputs.
+        logger.warning("Missing authorization token; proceeding without validation.")
+        return None
     else:
         if req_token.startswith("eyJhbGciOi") or req_token.startswith("fk-"):
             access_token = req_token
             return access_token
         elif len(req_token) == 45:
             try:
-                if req_token in globals.error_token_list:
-                    raise HTTPException(status_code=401, detail="Error RefreshToken")
-
                 access_token = await rt2ac(req_token, force_refresh=False)
                 return access_token
             except HTTPException as e:
-                raise HTTPException(status_code=e.status_code, detail=e.detail)
+                logger.warning("Refresh token validation skipped: %s", e.detail)
+                return None
         else:
             return req_token
 

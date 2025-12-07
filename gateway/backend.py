@@ -17,7 +17,7 @@ from gateway.chatgpt import chatgpt_html
 from gateway.reverseProxy import chatgpt_reverse_proxy, content_generator, get_real_req_token, headers_reject_list
 from utils.Client import Client
 from utils.Logger import logger
-from utils.configs import x_sign, turnstile_solver_url, chatgpt_base_url_list, no_sentinel
+from utils.config import x_sign, turnstile_solver_url, chatgpt_base_url_list, no_sentinel, get_default_authorization
 
 banned_paths = [
     "backend-api/accounts/logout_all",
@@ -34,9 +34,14 @@ redirect_paths = ["auth/logout"]
 chatgpt_paths = ["c/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"]
 
 
+def get_request_token(request: Request):
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    return token if token else get_default_authorization()
+
+
 @app.get("/backend-api/accounts/check/v4-2023-04-27")
 async def check_account(request: Request):
-    token = request.headers.get("Authorization").replace("Bearer ", "")
+    token = get_request_token(request)
     check_account_response = await chatgpt_reverse_proxy(request, "backend-api/accounts/check/v4-2023-04-27")
     if len(token) == 45 or token.startswith("eyJhbGciOi"):
         return check_account_response
@@ -55,7 +60,7 @@ async def check_account(request: Request):
 
 @app.get("/backend-api/gizmos/bootstrap")
 async def get_gizmos_bootstrap(request: Request):
-    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    token = get_request_token(request)
     if len(token) == 45 or token.startswith("eyJhbGciOi"):
         return await chatgpt_reverse_proxy(request, "backend-api/gizmos/bootstrap")
     else:
@@ -64,7 +69,7 @@ async def get_gizmos_bootstrap(request: Request):
 
 @app.get("/backend-api/gizmos/pinned")
 async def get_gizmos_pinned(request: Request):
-    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    token = get_request_token(request)
     if len(token) == 45 or token.startswith("eyJhbGciOi"):
         return await chatgpt_reverse_proxy(request, "backend-api/gizmos/pinned")
     else:
@@ -73,7 +78,7 @@ async def get_gizmos_pinned(request: Request):
 
 @app.get("/public-api/gizmos/discovery/recent")
 async def get_gizmos_discovery_recent(request: Request):
-    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    token = get_request_token(request)
     if len(token) == 45 or token.startswith("eyJhbGciOi"):
         return await chatgpt_reverse_proxy(request, "public-api/gizmos/discovery/recent")
     else:
@@ -91,7 +96,7 @@ async def get_gizmos_discovery_recent(request: Request):
 
 @app.api_route("/backend-api/conversations", methods=["GET", "PATCH"])
 async def get_conversations(request: Request):
-    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    token = get_request_token(request)
     if len(token) == 45 or token.startswith("eyJhbGciOi"):
         return await chatgpt_reverse_proxy(request, "backend-api/conversations")
     if request.method == "GET":
@@ -123,7 +128,7 @@ async def get_conversations(request: Request):
 
 @app.get("/backend-api/conversation/{conversation_id}")
 async def update_conversation(request: Request, conversation_id: str):
-    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    token = get_request_token(request)
     conversation_details_response = await chatgpt_reverse_proxy(request,
                                                                 f"backend-api/conversation/{conversation_id}")
     if len(token) == 45 or token.startswith("eyJhbGciOi"):
@@ -148,7 +153,7 @@ async def update_conversation(request: Request, conversation_id: str):
 
 @app.patch("/backend-api/conversation/{conversation_id}")
 async def patch_conversation(request: Request, conversation_id: str):
-    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    token = get_request_token(request)
     patch_response = (await chatgpt_reverse_proxy(request, f"backend-api/conversation/{conversation_id}"))
     if len(token) == 45 or token.startswith("eyJhbGciOi"):
         return patch_response
@@ -170,7 +175,7 @@ async def patch_conversation(request: Request, conversation_id: str):
 
 @app.get("/backend-api/me")
 async def get_me(request: Request):
-    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    token = get_request_token(request)
     if len(token) == 45 or token.startswith("eyJhbGciOi"):
         return await chatgpt_reverse_proxy(request, "backend-api/me")
     else:
@@ -249,7 +254,7 @@ if no_sentinel:
 
     @app.post("/backend-api/conversation")
     async def chat_conversations(request: Request):
-        token = request.headers.get("Authorization", "").replace("Bearer ", "")
+        token = get_request_token(request)
         req_token = await get_real_req_token(token)
         access_token = await verify_token(req_token)
         fp = get_fp(req_token)
@@ -333,7 +338,7 @@ if no_sentinel:
 
 @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH", "TRACE"])
 async def reverse_proxy(request: Request, path: str):
-    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    token = get_request_token(request)
     if len(token) != 45 and not token.startswith("eyJhbGciOi"):
         for banned_path in banned_paths:
             if re.match(banned_path, path):

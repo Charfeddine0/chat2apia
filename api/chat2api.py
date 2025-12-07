@@ -12,7 +12,7 @@ from app import app, templates, security_scheme
 from chatgpt.ChatService import ChatService
 from chatgpt.authorization import refresh_all_tokens
 from utils.Logger import logger
-from utils.configs import api_prefix, scheduled_refresh
+from utils.config import api_prefix, scheduled_refresh, get_default_authorization
 from utils.retry import async_retry
 
 scheduler = AsyncIOScheduler()
@@ -51,7 +51,7 @@ async def process(request_data, req_token):
 
 @app.post(f"/{api_prefix}/v1/chat/completions" if api_prefix else "/v1/chat/completions")
 async def send_conversation(request: Request, credentials: HTTPAuthorizationCredentials = Security(security_scheme)):
-    req_token = credentials.credentials
+    req_token = credentials.credentials if credentials and credentials.credentials else get_default_authorization()
     try:
         request_data = await request.json()
     except Exception:

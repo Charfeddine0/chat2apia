@@ -15,7 +15,7 @@ from chatgpt.proofofWork import get_config, get_dpl, get_answer_token, get_requi
 
 from utils.Client import Client
 from utils.Logger import logger
-from utils.configs import (
+from utils.config import (
     chatgpt_base_url_list,
     ark0se_token_url_list,
     history_disabled,

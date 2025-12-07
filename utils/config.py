@@ -54,6 +54,10 @@ proxy_url_list = proxy_url.split(',') if proxy_url else []
 impersonate_list = ast.literal_eval(impersonate_list_str)
 user_agents_list = ast.literal_eval(user_agents_list_str)
 
+
+def get_default_authorization():
+    return authorization_list[0] if authorization_list else ''
+
 enable_gateway = is_true(os.getenv('ENABLE_GATEWAY', False))
 auto_seed = is_true(os.getenv('AUTO_SEED', True))
 no_sentinel = is_true(os.getenv('NO_SENTINEL', False))

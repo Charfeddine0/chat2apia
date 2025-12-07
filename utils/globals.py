@@ -1,7 +1,7 @@
 import json
 import os
 
-import utils.configs as configs
+import utils.config as configs
 from utils.Logger import logger
 
 DATA_FOLDER = "data"
