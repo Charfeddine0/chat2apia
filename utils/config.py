@@ -6,7 +6,8 @@ from dotenv import load_dotenv
 
 from utils.Logger import logger
 
-load_dotenv(encoding="utf-8")
+_env_path = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(_env_path, encoding="utf-8")
 
 
 def _parse_literal_list(value, default=None, *, env_name=""):
