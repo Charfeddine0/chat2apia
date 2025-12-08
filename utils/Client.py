@@ -1,5 +1,3 @@
-import random
-
 from curl_cffi.requests import AsyncSession
 
 
@@ -42,15 +40,16 @@ class Client:
         return r
 
     async def close(self):
-        if self.session:
+        session = getattr(self, "session", None)
+        if session:
             try:
-                await self.session.close()
-                del self.session
-            except Exception:
-                pass
-        if self.session2:
+                await session.close()
+            finally:
+                self.session = None
+
+        session2 = getattr(self, "session2", None)
+        if session2:
             try:
-                await self.session2.close()
-                del self.session2
-            except Exception:
-                pass
+                await session2.close()
+            finally:
+                self.session2 = None

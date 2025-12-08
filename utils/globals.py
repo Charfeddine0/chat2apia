@@ -39,50 +39,26 @@ impersonate_list = [
 if not os.path.exists(DATA_FOLDER):
     os.makedirs(DATA_FOLDER)
 
-if os.path.exists(REFRESH_MAP_FILE):
-    with open(REFRESH_MAP_FILE, "r") as f:
-        try:
-            refresh_map = json.load(f)
-        except:
-            refresh_map = {}
-else:
-    refresh_map = {}
 
-if os.path.exists(WSS_MAP_FILE):
-    with open(WSS_MAP_FILE, "r") as f:
-        try:
-            wss_map = json.load(f)
-        except:
-            wss_map = {}
-else:
-    wss_map = {}
+def _load_json_file(path, default):
+    if not os.path.exists(path):
+        return default
 
-if os.path.exists(FP_FILE):
-    with open(FP_FILE, "r", encoding="utf-8") as f:
-        try:
-            fp_map = json.load(f)
-        except:
-            fp_map = {}
-else:
-    fp_map = {}
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except json.JSONDecodeError as exc:
+        logger.warning(f"Failed to parse JSON in {path}: {exc}. Using default value.")
+    except OSError as exc:
+        logger.warning(f"Failed to read {path}: {exc}. Using default value.")
+    return default
 
-if os.path.exists(SEED_MAP_FILE):
-    with open(SEED_MAP_FILE, "r") as f:
-        try:
-            seed_map = json.load(f)
-        except:
-            seed_map = {}
-else:
-    seed_map = {}
 
-if os.path.exists(CONVERSATION_MAP_FILE):
-    with open(CONVERSATION_MAP_FILE, "r") as f:
-        try:
-            conversation_map = json.load(f)
-        except:
-            conversation_map = {}
-else:
-    conversation_map = {}
+refresh_map = _load_json_file(REFRESH_MAP_FILE, {})
+wss_map = _load_json_file(WSS_MAP_FILE, {})
+fp_map = _load_json_file(FP_FILE, {})
+seed_map = _load_json_file(SEED_MAP_FILE, {})
+conversation_map = _load_json_file(CONVERSATION_MAP_FILE, {})
 
 if os.path.exists(TOKENS_FILE):
     with open(TOKENS_FILE, "r", encoding="utf-8") as f:

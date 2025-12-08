@@ -5,7 +5,46 @@ from dotenv import load_dotenv
 
 from utils.Logger import logger
 
-load_dotenv(encoding="ascii")
+load_dotenv(encoding="utf-8")
+
+
+def _parse_literal_list(value, default=None, *, env_name=""):
+    """Safely parse list-like environment variable values.
+
+    Returns the provided ``default`` when parsing fails or when the value is
+    empty, logging a warning so misconfigurations are visible without
+    crashing the application import step.
+    """
+
+    if default is None:
+        default = []
+
+    if not value:
+        return default
+
+    try:
+        parsed_value = ast.literal_eval(value)
+    except (ValueError, SyntaxError):
+        logger.warning(
+            f"Failed to parse {env_name or 'list value'} from environment; using default {default}"
+        )
+        return default
+
+    if isinstance(parsed_value, list):
+        return parsed_value
+
+    logger.warning(
+        f"Expected list for {env_name or 'list value'} but received {type(parsed_value).__name__}; using default {default}"
+    )
+    return default
+
+
+def _parse_int(value, default):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        logger.warning(f"Invalid integer value '{value}' in environment; using default {default}")
+        return default
 
 
 def is_true(x):
@@ -38,7 +77,7 @@ turnstile_solver_url = os.getenv('TURNSTILE_SOLVER_URL', None)
 
 history_disabled = is_true(os.getenv('HISTORY_DISABLED', True))
 pow_difficulty = os.getenv('POW_DIFFICULTY', '000032')
-retry_times = int(os.getenv('RETRY_TIMES', 3))
+retry_times = _parse_int(os.getenv('RETRY_TIMES', 3), 3)
 conversation_only = is_true(os.getenv('CONVERSATION_ONLY', False))
 enable_limit = is_true(os.getenv('ENABLE_LIMIT', True))
 upload_by_url = is_true(os.getenv('UPLOAD_BY_URL', False))
@@ -51,8 +90,8 @@ authorization_list = authorization.split(',') if authorization else []
 chatgpt_base_url_list = chatgpt_base_url.split(',') if chatgpt_base_url else []
 ark0se_token_url_list = ark0se_token_url.split(',') if ark0se_token_url else []
 proxy_url_list = proxy_url.split(',') if proxy_url else []
-impersonate_list = ast.literal_eval(impersonate_list_str)
-user_agents_list = ast.literal_eval(user_agents_list_str)
+impersonate_list = _parse_literal_list(impersonate_list_str, env_name="IMPERSONATE")
+user_agents_list = _parse_literal_list(user_agents_list_str, env_name="USER_AGENTS")
 
 
 def get_default_authorization():
