@@ -8,6 +8,7 @@ websockets
 pillow
 pybase64
 jinja2
+requests
 APScheduler
 ua-generator
 pyjwt

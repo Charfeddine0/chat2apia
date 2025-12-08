@@ -130,6 +130,30 @@ If the `AUTHORIZATION` environment variable is set, the set value can be passed 
 > - `RefreshToken` acquisition: No acquisition method is provided here.
 > - Login-free gpt3.5 No need to pass in Token
 
+### Example: ChatGPT Plus client script
+
+Use the included helper script to chat with your ChatGPT Plus account through chat2api:
+
+```bash
+pip install requests
+CHATGPT_ACCESS_TOKEN="your_access_token" \
+CHAT2API_BASE_URL="http://127.0.0.1:5005" \
+python examples/chatgpt_plus_chat.py "اكتب لي نكتة قصيرة"
+```
+
+Interactive chat (REPL) with optional system prompt:
+
+```bash
+python examples/chatgpt_plus_chat.py --system "أجب بإيجاز"
+```
+
+Flags and environment variables:
+
+- `CHATGPT_ACCESS_TOKEN` / `--token`: Your Plus account AccessToken or RefreshToken.
+- `CHAT2API_BASE_URL` / `--base-url`: chat2api base URL (defaults to `http://127.0.0.1:5005`).
+- `CHATGPT_MODEL` / `--model`: Model name to use (defaults to `gpt-4o`).
+- `--no-stream`: Disable streaming and print the full reply after completion.
+
 
 ## ArkoseToken
 
