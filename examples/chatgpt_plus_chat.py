@@ -69,8 +69,10 @@ def stream_chat(prompt: str, *, client: requests.Session, base_url: str, model: 
         output.append(output_text)
         print(output_text)
 
-    history.append({"role": "assistant", "content": "".join(output)})
-    return "".join(output)
+    reply = "".join(output)
+    history.append({"role": "user", "content": prompt})
+    history.append({"role": "assistant", "content": reply})
+    return reply
 
 
 def iter_deltas(response: requests.Response) -> Iterable[str]:
@@ -147,7 +149,6 @@ def main() -> None:
         if not user_input.strip():
             continue
 
-        history.append({"role": "user", "content": user_input})
         try:
             stream_chat(
                 user_input,
