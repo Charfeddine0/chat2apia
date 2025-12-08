@@ -1,5 +1,6 @@
 import ast
 import os
+from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -101,8 +102,16 @@ enable_gateway = is_true(os.getenv('ENABLE_GATEWAY', False))
 auto_seed = is_true(os.getenv('AUTO_SEED', True))
 no_sentinel = is_true(os.getenv('NO_SENTINEL', False))
 
-with open('version.txt') as f:
-    version = f.read().strip()
+_version_file = Path(__file__).resolve().parent.parent / "version.txt"
+try:
+    with _version_file.open(encoding="utf-8") as f:
+        version = f.read().strip()
+except FileNotFoundError:
+    version = "unknown"
+    logger.warning(f"version.txt not found at {_version_file}; using '{version}'")
+except OSError as exc:
+    version = "unknown"
+    logger.warning(f"Failed to read version.txt at {_version_file}: {exc}; using '{version}'")
 
 logger.info("-" * 60)
 logger.info(f"Chat2Api {version} | https://github.com/Niansuh/chat2api")
